@@ -25,11 +25,11 @@ jobs:
           from pathlib import Path
           p=Path('render.py')
           s=p.read_text()
-          s=s.replace("frames = tape['frames']; NF=len(frames); N=tape['N']", "frames = tape['frames'][240:480:5]; NF=len(frames); N=tape['N']")
+          s=s.replace("frames = tape['frames']; NF=len(frames); N=tape['N']", "frames = tape['frames'][240:480:10]; NF=len(frames); N=tape['N']")
           s=s.replace("sc.cycles.device='GPU'", "sc.cycles.device='CPU'")
           s=s.replace("sc.cycles.samples=48", "sc.cycles.samples=8")
-          s=s.replace("sc.render.resolution_x=1080; sc.render.resolution_y=1920", "sc.render.resolution_x=405; sc.render.resolution_y=720")
-          s=s.replace("sc.render.fps=FPS;", "sc.render.fps=12;")
+          s=s.replace("sc.render.resolution_x=1080; sc.render.resolution_y=1920", "sc.render.resolution_x=288; sc.render.resolution_y=512")
+          s=s.replace("sc.render.fps=FPS;", "sc.render.fps=6;")
           s=s.replace("sc.render.use_motion_blur=True", "try: sc.render.use_motion_blur=True\nexcept Exception: pass")
           s=s.replace("sc.view_settings.view_transform='Filmic'", "sc.view_settings.view_transform='Standard'")
           s=s.replace("cam_d.type='ORTHO'; cam_d.ortho_scale=HT*SCALE", "cam_d.type='PERSP'; cam_d.lens=67")
@@ -45,9 +45,10 @@ jobs:
           test -n "$(find output/frames -maxdepth 1 -name '*.png' -print -quit)"
       - name: Assemble MP4
         run: |
-          ffmpeg -y -loglevel error -framerate 12 -i output/frames/f_%04d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart output/gauntlet-3d-test.mp4
+          ffmpeg -y -loglevel error -framerate 6 -i output/frames/f_%04d.png -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart output/gauntlet-3d-test.mp4
           ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 output/gauntlet-3d-test.mp4
           test -s output/gauntlet-3d-test.mp4
+          test "$(sha256sum output/frames/f_0001.png | cut -d' ' -f1)" != "$(sha256sum output/frames/f_0024.png | cut -d' ' -f1)"
       - uses: actions/upload-artifact@v4
         with:
           name: gauntlet-moving-3d-test
