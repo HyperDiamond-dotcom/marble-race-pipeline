@@ -12,7 +12,7 @@ jobs:
       - name: Install free software
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y blender ffmpeg
+          sudo apt-get install -y blender ffmpeg libegl1
           npm install --no-audit --no-fund
       - name: Create deterministic physics simulation
         run: |
@@ -26,7 +26,8 @@ jobs:
           p=Path('render.py')
           s=p.read_text()
           s=s.replace("frames = tape['frames']; NF=len(frames); N=tape['N']", "frames = tape['frames'][240:480:5]; NF=len(frames); N=tape['N']")
-          s=s.replace("sc.render.engine='CYCLES'", "sc.render.engine='BLENDER_EEVEE'")
+          s=s.replace("sc.cycles.device='GPU'", "sc.cycles.device='CPU'")
+          s=s.replace("sc.cycles.samples=48", "sc.cycles.samples=8")
           s=s.replace("sc.render.resolution_x=1080; sc.render.resolution_y=1920", "sc.render.resolution_x=405; sc.render.resolution_y=720")
           s=s.replace("sc.render.fps=FPS;", "sc.render.fps=12;")
           s=s.replace("sc.render.use_motion_blur=True", "try: sc.render.use_motion_blur=True\nexcept Exception: pass")
