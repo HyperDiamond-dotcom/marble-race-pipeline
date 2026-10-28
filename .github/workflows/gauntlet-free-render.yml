@@ -41,15 +41,8 @@ jobs:
           s=s.replace("track=mat_metal((0.62,0.65,0.7),0.18)", "track=mat_plastic((0.64,0.80,0.95),0.22)")
           s=s.replace("frame=mat_metal((0.18,0.2,0.24),0.6)", "frame=mat_plastic((0.30,0.46,0.65),0.3)")
           s=s.replace("mat_glass(col) if TH['marble']=='glass' else mat_plastic(col,0.12)", "mat_plastic(col,0.1)")
-          s=s.replace("# ---------- keyframe everything ----------", """# ------- tracking lights for consistently bright 3D rendering -------
-follow_key=add_light('AREA','Moving bright white key',3500,(0,-4,0),(math.radians(90),0,0),size=7)
-follow_fill=add_light('AREA','Moving bright colored fill',2200,(-2,-4,0),(math.radians(90),0,0),size=6)
-# ---------- keyframe everything ----------""")
-          s=s.replace("cam.keyframe_insert('location',frame=frame)", """cam.keyframe_insert('location',frame=frame)
-    follow_key.location=(0,-4,cam.location.z+3)
-    follow_fill.location=(-2,-4,cam.location.z-2)
-    follow_key.keyframe_insert('location',frame=frame)
-    follow_fill.keyframe_insert('location',frame=frame)""")
+          s=s.replace("# ---------- keyframe everything ----------", "# ------- tracking lights for bright 3D rendering -------\nfollow_key=add_light('AREA','Moving bright white key',3500,(0,-4,0),(math.radians(90),0,0),size=7)\nfollow_fill=add_light('AREA','Moving bright colored fill',2200,(-2,-4,0),(math.radians(90),0,0),size=6)\n# ---------- keyframe everything ----------")
+          s=s.replace("cam.keyframe_insert('location',frame=frame)", "cam.keyframe_insert('location',frame=frame)\n    follow_key.location=(0,-4,cam.location.z+3)\n    follow_fill.location=(-2,-4,cam.location.z-2)\n    follow_key.keyframe_insert('location',frame=frame)\n    follow_fill.keyframe_insert('location',frame=frame)")
           p.write_text(s)
           PY
       - name: Render a genuinely moving 3D scene
