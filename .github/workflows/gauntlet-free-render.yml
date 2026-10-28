@@ -26,7 +26,7 @@ jobs:
           p=Path('render.py')
           s=p.read_text()
           s=s.replace("frames = tape['frames']; NF=len(frames); N=tape['N']", "frames = tape['frames'][240:480:5]; NF=len(frames); N=tape['N']")
-          s=s.replace("sc.render.engine='CYCLES'", "sc.render.engine='BLENDER_EEVEE_NEXT'")
+          s=s.replace("sc.render.engine='CYCLES'", "sc.render.engine='BLENDER_EEVEE'")
           s=s.replace("sc.render.resolution_x=1080; sc.render.resolution_y=1920", "sc.render.resolution_x=405; sc.render.resolution_y=720")
           s=s.replace("sc.render.fps=FPS;", "sc.render.fps=12;")
           s=s.replace("sc.render.use_motion_blur=True", "try: sc.render.use_motion_blur=True\nexcept Exception: pass")
@@ -39,6 +39,7 @@ jobs:
       - name: Render a genuinely moving 3D scene
         run: |
           blender -b -t 4 -noaudio -P render.py -- output/tape.json output/frames chrome
+          test -n "$(find output/frames -maxdepth 1 -name '*.png' -print -quit)"
       - name: Assemble MP4
         run: |
           ffmpeg -y -loglevel error -framerate 12 -i output/frames/f_%04d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart output/gauntlet-3d-test.mp4
