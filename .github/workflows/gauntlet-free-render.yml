@@ -1,0 +1,51 @@
+name: Gauntlet - free Blender test
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test-render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install free software
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y blender ffmpeg
+          npm install --no-audit --no-fund
+      - name: Create deterministic physics simulation
+        run: |
+          mkdir -p output/frames
+          node make-tape.js 27485 5 1 race output/tape.json
+          node -e "const t=require('./output/tape.json'); const a=t.frames[240].m[0],b=t.frames[360].m[0]; if(t.frames.length<=360||Math.hypot(a.x-b.x,a.y-b.y)<2)process.exit(1);console.log('Motion verified')"
+      - name: Adapt 3D renderer for a short free CPU test
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('render.py')
+          s=p.read_text()
+          s=s.replace("frames = tape['frames']; NF=len(frames); N=tape['N']", "frames = tape['frames'][240:480:5]; NF=len(frames); N=tape['N']")
+          s=s.replace("sc.render.engine='CYCLES'", "sc.render.engine='BLENDER_EEVEE_NEXT'")
+          s=s.replace("sc.render.resolution_x=1080; sc.render.resolution_y=1920", "sc.render.resolution_x=405; sc.render.resolution_y=720")
+          s=s.replace("sc.render.fps=FPS;", "sc.render.fps=12;")
+          s=s.replace("sc.render.use_motion_blur=True", "try: sc.render.use_motion_blur=True\nexcept Exception: pass")
+          s=s.replace("sc.view_settings.view_transform='Filmic'", "sc.view_settings.view_transform='Standard'")
+          s=s.replace("cam_d.type='ORTHO'; cam_d.ortho_scale=HT*SCALE", "cam_d.type='PERSP'; cam_d.lens=67")
+          s=s.replace("cam.rotation_euler=(math.radians(90),0,0)   # look along +Y toward the scene plane", "")
+          s=s.replace("cam.location=(0,-12,(-(camY+HT/2))*SCALE)", "cam.location=(0,-10.7,(-(camY+HT/2))*SCALE+2.8)\n    from mathutils import Vector\n    aim=Vector((0,0,(-(camY+HT/2))*SCALE))\n    cam.rotation_euler=(aim-Vector(cam.location)).to_track_quat('-Z','Y').to_euler()")
+          p.write_text(s)
+          PY
+      - name: Render a genuinely moving 3D scene
+        run: |
+          blender -b -t 4 -noaudio -P render.py -- output/tape.json output/frames chrome
+      - name: Assemble MP4
+        run: |
+          ffmpeg -y -loglevel error -framerate 12 -i output/frames/f_%04d.png -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart output/gauntlet-3d-test.mp4
+          ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1 output/gauntlet-3d-test.mp4
+          test -s output/gauntlet-3d-test.mp4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gauntlet-moving-3d-test
+          path: output/gauntlet-3d-test.mp4
+          retention-days: 3
