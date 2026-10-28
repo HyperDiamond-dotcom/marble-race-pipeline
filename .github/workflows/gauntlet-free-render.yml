@@ -35,6 +35,8 @@ jobs:
           s=s.replace("cam_d.type='ORTHO'; cam_d.ortho_scale=HT*SCALE", "cam_d.type='PERSP'; cam_d.lens=67")
           s=s.replace("cam.rotation_euler=(math.radians(90),0,0)   # look along +Y toward the scene plane", "")
           s=s.replace("cam.location=(0,-12,(-(camY+HT/2))*SCALE)", "cam.location=(0,-10.7,(-(camY+HT/2))*SCALE+2.8)\n    from mathutils import Vector\n    aim=Vector((0,0,(-(camY+HT/2))*SCALE))\n    cam.rotation_euler=(aim-Vector(cam.location)).to_track_quat('-Z','Y').to_euler()")
+          s=s.replace("sc.cycles.use_denoising=True", "sc.cycles.use_denoising=False")
+          s=s.replace("bpy.ops.render.render(animation=True)", "bpy.context.view_layer.cycles.use_denoising=False\nbpy.ops.render.render(animation=True)")
           p.write_text(s)
           PY
       - name: Render a genuinely moving 3D scene
